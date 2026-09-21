@@ -68,15 +68,30 @@ function seenHints(game) {
   return seen;
 }
 
+/* Filters that already showed a green, where only one green is possible (everything except plain
+   list filters like Special diet). Once the answer is known there, further clues are pointless. */
+function solvedFilterIds(game) {
+  var solved = {};
+  game.history.forEach(function (r) {
+    (r.filters || []).forEach(function (f) {
+      var def = getFilter(f.id);
+      if (f.result === RESULT.GREEN && (def.kind !== 'multi' || def.primaryIsGreen)) solved[f.id] = true;
+    });
+  });
+  return solved;
+}
+
 /* Which characteristics get revealed for one animal guess (kept in FILTERS order).
    A filter+result combination is never shown twice in a game: entries already seen are dropped,
+   a filter whose single answer is already known (a green was shown) is skipped,
    and a filter with nothing new left is skipped (so a guess may reveal fewer than the usual count). */
 function revealForGuess(game, guessed) {
-  var settings = game.settings, seen = seenHints(game);
+  var settings = game.settings, seen = seenHints(game), solved = solvedFilterIds(game);
   var pool = FILTERS;
   if (settings.revealStrategy === 'fixed') pool = FILTERS.filter(function (f) { return settings.revealIds.indexOf(f.id) >= 0; });
   var options = [];
   pool.forEach(function (def) {
+    if (solved[def.id]) return;
     var entries = guessedAttributeFeedback(def, guessed, game.target).filter(function (e) { return !seen[def.id + '|' + e.result]; });
     if (entries.length) options.push({ def: def, entries: entries });
   });
