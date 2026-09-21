@@ -71,7 +71,7 @@ function afterGuess(game, record) {
   if (game.status === 'playing' && game.guessCount >= game.settings.maxGuesses) game.status = 'lost';
 }
 
-/* Filter+result combinations (e.g. "trunk|gray") already shown to the player in earlier guesses. */
+/* Filter+result combinations (e.g. "wings|gray") already shown to the player in earlier guesses. */
 function seenHints(game) {
   var seen = {};
   game.history.forEach(function (r) {

@@ -16,7 +16,7 @@ from openpyxl.utils import get_column_letter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XLSX = os.path.join(ROOT, 'data', 'animals.xlsx')
-TRAITS = ['wings', 'horns', 'tail', 'shell', 'stripes', 'spots', 'snout', 'trunk']
+TRAITS = ['wings', 'horns', 'tail', 'shell', 'stripes', 'spots', 'snout']
 SINGLE = ['class', 'region', 'climate', 'habitat', 'environment', 'size', 'diet', 'activity', 'social', 'covering']
 # (header, kind, key)
 COLUMNS = ([('Name', 'name', 'name'), ('Fame (1-3)', 'fame', 'fame')]
@@ -217,7 +217,7 @@ def write_animals_js(animals):
          '     class, region, climate, habitat, size, diet, activity, social, covering, environment: single value',
          '     diet2      : optional array of secondary diets (Insectivore / Piscivore / Frugivore)',
          '     locomotion : array; FIRST entry is the primary way of moving',
-         '     traits     : array from: wings, horns, tail, shell, stripes, spots, snout, trunk',
+         '     traits     : array from: wings, horns, tail, shell, stripes, spots, snout',
          '   Allowed values are listed in filters.js. Fame ratings are in fame.js.',
          '   This is the FULL database. Which animals are actually playable is decided in roster.js.',
          '   ========================================================== */',

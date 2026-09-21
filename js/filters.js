@@ -84,8 +84,7 @@ var FILTERS = [
   traitFilter('shell', 'Has a shell'),
   traitFilter('stripes', 'Has stripes'),
   traitFilter('spots', 'Has spots'),
-  traitFilter('snout', 'Has a long snout'),
-  traitFilter('trunk', 'Has a trunk/proboscis')
+  traitFilter('snout', 'Has a long snout')
 ];
 
 function getFilter(id) {
