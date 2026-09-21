@@ -21,6 +21,7 @@ function currentSettings() {
     revealStrategy: REVEAL_STRATEGY,
     revealIds: REVEALED_FILTER_IDS.slice(),
     count: NUMBER_OF_ANIMALS,
+    fameMix: FAME_MIX,
     filtersPerGuess: Math.max(1, Math.min(FILTERS_PER_GUESS, FILTERS.length)),
     maxGuesses: MAX_GUESSES,
     showRemaining: SHOW_REMAINING_ANIMALS,
@@ -28,15 +29,26 @@ function currentSettings() {
   };
 }
 
-/* Pick `count` random animals from the master database (capped at its size). */
-function buildPool(db, count) {
-  return shuffle(db).slice(0, Math.min(count, db.length));
+/* Pick `count` random animals from the master database (capped at its size).
+   With a fame mix [familiar%, known%, obscure%], each tier fills its share of the pool at random;
+   a tier that doesn't have enough animals borrows from the nearest other tiers. */
+function buildPool(db, count, mix) {
+  count = Math.min(count, db.length);
+  if (!mix) return shuffle(db).slice(0, count);
+  var tiers = [1, 2, 3].map(function (t) { return shuffle(db.filter(function (a) { return a.fame === t; })); });
+  var quota = [Math.round(count * mix[0] / 100), 0, Math.round(count * mix[2] / 100)];
+  quota[1] = count - quota[0] - quota[2];
+  var pool = [];
+  [0, 2, 1].forEach(function (i) { pool = pool.concat(tiers[i].splice(0, quota[i])); });
+  // shortfall: fill from the tiers nearest the missing ones (Known first, then the rest)
+  [1, 0, 2].forEach(function (i) { if (pool.length < count) pool = pool.concat(tiers[i].splice(0, count - pool.length)); });
+  return shuffle(pool);
 }
 
 /* opts: { settings, pool?, target? } — pool and target are optional (used by the simulator). */
 function createGame(opts) {
   var settings = opts.settings;
-  var pool = opts.pool || buildPool(ANIMALS, settings.count);
+  var pool = opts.pool || buildPool(ANIMALS, settings.count, settings.fameMix);
   var target = opts.target || pool[Math.floor(Math.random() * pool.length)];   // fixed for the whole game
   return {
     settings: settings,

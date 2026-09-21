@@ -29,11 +29,13 @@ var DIFFICULTY = 'easy';
 var BINARY_CLUE_SHARE = 0.2;   // chance that each revealed trait slot is a yes/no trait (wings, tail, ...)
 
 var DIFFICULTY_LEVELS = [
-  { id: 'easy',     label: 'Easy',      animals: 20,  traits: 5 },
-  { id: 'medium',   label: 'Medium',    animals: 30,  traits: 4 },
-  { id: 'hard',     label: 'Hard',      animals: 50,  traits: 3 },
-  { id: 'veryhard', label: 'Very Hard', animals: 100, traits: 3 }
+  // mix = % of the pool that is Familiar / Known / Obscure animals (see js/fame.js); should total 100
+  { id: 'easy',     label: 'Easy',      animals: 20,  traits: 5, mix: [80, 20, 0]  },
+  { id: 'medium',   label: 'Medium',    animals: 30,  traits: 4, mix: [50, 40, 10] },
+  { id: 'hard',     label: 'Hard',      animals: 50,  traits: 3, mix: [30, 40, 30] },
+  { id: 'veryhard', label: 'Very Hard', animals: 100, traits: 3, mix: [15, 40, 45] }
 ];
+var FAME_MIX = DIFFICULTY_LEVELS[0].mix;   // set by applyDifficulty; null = ignore fame and pick purely at random
 var SETTINGS_LOCKED = true;   // true: the Game Settings panel is visible but disabled while difficulty levels are in use
 
 function applyDifficulty(id) {
@@ -42,6 +44,7 @@ function applyDifficulty(id) {
   DIFFICULTY = id;
   NUMBER_OF_ANIMALS = lvl.animals;
   REVEALED_TRAITS = lvl.traits;
+  FAME_MIX = lvl.mix;
   REVEAL_STRATEGY = 'random';
 }
 
