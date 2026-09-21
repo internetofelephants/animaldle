@@ -26,6 +26,8 @@ var GRAY_ELIMINATES        = true;  // true: gray removes animals that would hav
 
 /* Difficulty levels — choosing one sets NUMBER_OF_ANIMALS and REVEALED_TRAITS, then starts a new game */
 var DIFFICULTY = 'easy';
+var BINARY_CLUE_SHARE = 0.2;   // chance that each revealed trait slot is a yes/no trait (wings, tail, ...)
+
 var DIFFICULTY_LEVELS = [
   { id: 'easy',     label: 'Easy',      animals: 20,  traits: 5 },
   { id: 'medium',   label: 'Medium',    animals: 30,  traits: 4 },

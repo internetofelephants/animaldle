@@ -86,18 +86,29 @@ function solvedFilterIds(game) {
    a filter whose single answer is already known (a green was shown) is skipped,
    and a filter with nothing new left is skipped (so a guess may reveal fewer than the usual count). */
 function revealForGuess(game, guessed) {
-  var settings = game.settings, seen = seenHints(game), solved = solvedFilterIds(game);
+  var settings = game.settings, seen = seenHints(game), solved = solvedFilterIds(game), asked = {};
+  game.history.forEach(function (r) { (r.filters || []).forEach(function (f) { asked[f.id] = true; }); });
   var pool = FILTERS;
   if (settings.revealStrategy === 'fixed') pool = FILTERS.filter(function (f) { return settings.revealIds.indexOf(f.id) >= 0; });
   var options = [];
   pool.forEach(function (def) {
     if (solved[def.id]) return;
+    if (def.kind === 'boolean' && asked[def.id]) return;   // a yes/no trait tells you everything the first time
     var entries = guessedAttributeFeedback(def, guessed, game.target).filter(function (e) { return !seen[def.id + '|' + e.result]; });
     if (entries.length) options.push({ def: def, entries: entries });
   });
   var n = settings.revealStrategy === 'fixed' ? 0 : settings.revealCount;
   if (n && n < options.length) {
-    var picked = shuffle(options).slice(0, n);
+    // Each slot is a yes/no trait with probability BINARY_CLUE_SHARE, otherwise a multi-valued one
+    // (falling back to the other kind when one runs out). Without this, yes/no traits would be ~40% of clues.
+    var bin = shuffle(options.filter(function (o) { return o.def.kind === 'boolean'; }));
+    var rich = shuffle(options.filter(function (o) { return o.def.kind !== 'boolean'; }));
+    var picked = [];
+    while (picked.length < n && (bin.length || rich.length)) {
+      var wantBin = Math.random() < BINARY_CLUE_SHARE;
+      var src = (wantBin ? bin.length : !rich.length) ? bin : rich;
+      picked.push(src.pop());
+    }
     options = options.filter(function (o) { return picked.indexOf(o) >= 0; });
   }
   return options;
