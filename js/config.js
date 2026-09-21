@@ -43,6 +43,11 @@ function applyDifficulty(id) {
   REVEAL_STRATEGY = 'random';
 }
 
+/* Photos */
+var PHOTO_HINTS = 3;         // board mode: how many different animals a player may look up a photo for per game
+var REQUIRE_PHOTO = true;     // true: only animals with an approved photo (see js/photos.js) can appear in the game
+                              // false: the full database, photo or not
+
 /* Developer options */
 var DEBUG_ENABLED  = true;  // false hides the debug panel (or just delete debug.js's <script> tag)
 var SIM_GUESS_CAP  = 40;    // safety cap on guesses per game in "Test All Animals"

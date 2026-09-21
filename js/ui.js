@@ -12,6 +12,43 @@ function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
+/* ---------- photos ---------- */
+
+function photoFor(name) { return (typeof PHOTOS !== 'undefined' && PHOTOS[name]) || null; }
+
+function creditLine(p) {
+  var lic = p.licenseUrl ? '<a href="' + esc(p.licenseUrl) + '" target="_blank" rel="noopener">' + esc(p.license) + '</a>' : esc(p.license);
+  return 'Photo: ' + esc(p.author) + ' · ' + lic + ' · <a href="' + esc(p.source) + '" target="_blank" rel="noopener">source</a>';
+}
+
+/* <img> that opens the photo popup when clicked (data-photo). Empty string when there's no photo. */
+function photoImg(name, cls) {
+  var p = photoFor(name);
+  if (!p) return '';
+  return '<img class="' + cls + '" src="' + esc(p.file) + '" alt="' + esc(name) + '" title="' + esc(name) + ' — click to enlarge" data-photo="' + esc(name) + '" onerror="this.style.display=\'none\'">';
+}
+
+function openPhoto(name) {
+  var p = photoFor(name);
+  if (!p) return;
+  var m = $('photo-modal');
+  m.innerHTML = '<div class="dialog" role="dialog" aria-label="' + esc(name) + '"><button class="close" aria-label="Close">✕</button>' +
+    '<img src="' + esc(p.file) + '" alt="' + esc(name) + '"><div class="cap"><b>' + esc(name) + '</b><br>' + creditLine(p) + '</div></div>';
+  m.hidden = false;
+}
+function closePhoto() { $('photo-modal').hidden = true; }
+
+var creditsFor = null;   // the game whose credits list is currently rendered
+function renderCredits() {
+  if (creditsFor === game) return;
+  creditsFor = game;
+  var rows = game.pool.map(function (a) { return a.name; }).sort().map(function (n) {
+    var p = photoFor(n);
+    return p ? '<li><b>' + esc(n) + '</b> — ' + creditLine(p) + '</li>' : '';
+  }).join('');
+  $('credits-list').innerHTML = '<ul>' + rows + '</ul>';
+}
+
 function newGame() {
   game = createGame({ settings: currentSettings() });
   slots = [];
@@ -30,6 +67,7 @@ function render() {
   renderRemaining();
   renderHistory();
   renderDifficulty();
+  renderCredits();
   renderSettings();
   if (window.DebugPanel && DEBUG_ENABLED) DebugPanel.render(game);
 }
@@ -86,8 +124,12 @@ function guessableNames() {
 
 function renderAnimalGuessPanel(panel) {
   if (game.settings.board) {   // guessing happens with the ✓ button on the board
-    panel.innerHTML = '<h2>GUESS #' + (game.guessCount + 1) + ' <span class="dim">of ' + game.settings.maxGuesses + '</span></h2>' +
-      '<p class="dim">Pick an animal on the board below. You\'ll see some of its traits colored against the mystery animal.</p>';
+    var left = photoHintsLeft(game);
+    var hintText = left === 0 ? 'No photo hints left' : left + ' photo hint' + (left === 1 ? '' : 's') + ' left';
+    panel.innerHTML = '<h2>GUESS #' + (game.guessCount + 1) + ' <span class="dim">of ' + game.settings.maxGuesses + '</span>' +
+      '<span class="hints' + (left === 0 ? ' none' : '') + '" title="Click an animal\'s name to see its photo">📷 ' + hintText + '</span></h2>' +
+      '<p class="dim">Pick an animal on the board below. You\'ll see some of its traits colored against the mystery animal. ' +
+      'Tap an animal\'s name to see its photo — you get ' + game.settings.photoHints + ' photo hints per game.</p>';
     return;
   }
   var html = '<h2>GUESS #' + (game.guessCount + 1) + ' <span class="dim">of ' + game.settings.maxGuesses + '</span></h2>' +
@@ -109,12 +151,16 @@ function typedAnimal() {
 function renderResult() {
   var box = $('result');
   var html = '';
+  var pic = photoImg(game.target.name, 'result-photo');
+  var tp = photoFor(game.target.name);
+  var credit = tp ? '<div class="credit">' + creditLine(tp) + '</div>' : '';
+  var wrap = function (cls, inner) { return '<div class="banner ' + cls + (pic ? ' withphoto' : '') + '">' + pic + '<div class="txt">' + inner + credit + '</div></div>'; };
   if (game.status === 'won') {
     var last = game.history[game.history.length - 1];
     if (last.type === 'animal') html += '<p class="big">CORRECT!</p><p>You found the ' + esc(game.target.name) + ' in ' + plural(game.guessCount, 'guess', 'guesses') + '.</p>';
-    html += '<div class="banner win"><div class="big">YOU FOUND IT!</div>Animal: ' + esc(game.target.name) + '<br>Guesses: ' + game.guessCount + '</div>';
+    html += wrap('win', '<div class="big">YOU FOUND IT!</div>Animal: ' + esc(game.target.name) + '<br>Guesses: ' + game.guessCount);
   } else if (game.status === 'lost') {
-    html += '<div class="banner lose"><div class="big">OUT OF GUESSES</div>The animal was: ' + esc(game.target.name) + '<br>Guesses used: ' + game.guessCount + '</div>';
+    html += wrap('lose', '<div class="big">OUT OF GUESSES</div>The animal was: ' + esc(game.target.name) + '<br>Guesses used: ' + game.guessCount);
   } else if (revealed) {
     html += '<div class="banner reveal">Answer: ' + esc(game.target.name) + '</div>';
   }
@@ -140,9 +186,7 @@ function renderBoard(box) {
   var names = game.pool.map(function (a) { return a.name; }).sort();
   var guessed = {};
   game.history.forEach(function (r) { if (r.animal) guessed[r.animal] = true; });
-  var struck = names.filter(function (n) { return notes[n] || (guessed[n] && n !== game.target.name); }).length;
-  var html = '<div class="count">' + (names.length - struck) + ' <span class="dim">of ' + names.length + ' still in play (your notes)</span></div>' +
-    '<p class="dim"><span class="key ok">✓</span> guess that animal &nbsp; <span class="key no">✕</span> rule it out (again to undo)</p>' +
+  var html = '<p class="dim"><span class="key ok">✓</span> guess that animal &nbsp; <span class="key no">✕</span> rule it out (again to undo)</p>' +
     '<ul class="names board">';
   names.forEach(function (n) {
     var cls = 'tile';
@@ -154,7 +198,10 @@ function renderBoard(box) {
       buttons = '<span class="btns"><button class="tile-guess" data-name="' + esc(n) + '" title="Guess ' + esc(n) + '" aria-label="Guess ' + esc(n) + '">✓</button>' +
         '<button class="tile-out" data-name="' + esc(n) + '" title="' + (notes[n] ? 'Bring back' : 'Rule out') + '" aria-label="' + (notes[n] ? 'Bring back ' : 'Rule out ') + esc(n) + '">' + (notes[n] ? '↺' : '✕') + '</button></span>';
     }
-    html += '<li class="' + cls + '"><span class="nm">' + esc(n) + '</span>' + buttons + '</li>';
+    var label = (photoFor(n) && canViewPhoto(game))
+      ? '<a href="#" class="nm animal-link" data-photo="' + esc(n) + '" title="See a photo of the ' + esc(n) + '">' + esc(n) + '</a>'
+      : '<span class="nm">' + esc(n) + '</span>';
+    html += '<li class="' + cls + '">' + label + buttons + '</li>';
   });
   box.innerHTML = html + '</ul>' + (Object.keys(notes).length ? '<button id="clear-notes">Clear my notes</button>' : '');
 }
@@ -237,15 +284,14 @@ function cluesHTML() {
 
 /* One guessed animal: a row per characteristic, each value a colored chip */
 function animalCardHTML(r, i) {
-  var html = '<div class="card"><b>GUESS ' + (i + 1) + ' — ' + esc(r.animal) + '</b>';
+  var html = '<div class="card guesscard"><div class="main"><b>GUESS ' + (i + 1) + ' — ' + esc(r.animal) + '</b>';
   var rows = [], byId = {};
   r.filters.forEach(function (f) {
     if (!byId[f.id]) { byId[f.id] = { label: f.label, chips: [] }; rows.push(byId[f.id]); }
     byId[f.id].chips.push('<span class="chip ' + f.result + '">' + esc(f.value) + '</span>');
   });
   rows.forEach(function (row) { html += '<div class="row"><span class="lbl">' + esc(row.label) + '</span>' + row.chips.join('') + '</div>'; });
-  var hidden = FILTERS.length - rows.length;
-  return html + '<div class="dim">' + (hidden ? hidden + ' traits not revealed · ' : '') + r.remainingCount + ' remain</div></div>';
+  return html + '</div>' + photoImg(r.animal, 'thumb') + '</div>';
 }
 
 function renderSettings() {
@@ -255,6 +301,7 @@ function renderSettings() {
   el.innerHTML =
     '<p id="settings-lock-note" class="locked-note">Locked for now: pool size and traits revealed are set by the difficulty level. (Set SETTINGS_LOCKED = false in config.js to edit.)</p>' +
     '<label>Game mode <select id="set-mode"><option value="animal">Guess animals (see all traits)</option><option value="filters">Pick filters</option></select></label>' +
+    '<label>Photo hints per game <input type="number" id="set-hints" min="0" max="20"> <span class="dim">(board mode)</span></label>' +
     '<label>Traits revealed per guess <input type="number" id="set-reveal" min="0" max="' + FILTERS.length + '"> <span class="dim">(0 = all)</span></label>' +
     '<label>Reveal strategy <select id="set-strategy"><option value="random">Random subset each guess</option><option value="fixed">Fixed traits (REVEALED_FILTER_IDS)</option></select></label>' +
     '<label><input type="checkbox" id="set-board"> Notebook board (animal mode: whole pool always shown, you strike animals out yourself)</label>' +
@@ -280,6 +327,7 @@ function applySettingsLock() {
 function syncSettingsInputs() {
   $('set-mode').value = GAME_MODE;
   $('set-board').checked = BOARD_MODE;
+  $('set-hints').value = PHOTO_HINTS;
   $('set-reveal').value = REVEALED_TRAITS;
   $('set-strategy').value = REVEAL_STRATEGY;
   $('set-count').value = NUMBER_OF_ANIMALS;
@@ -316,8 +364,23 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Enter' && e.target.id === 'animal-input') submitTypedAnimal();
 });
 
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePhoto(); });
+
 document.addEventListener('click', function (e) {
   var id = e.target.id;
+  var ph = e.target.closest && e.target.closest('[data-photo]');
+  if (ph) {
+    e.preventDefault();
+    if (ph.classList.contains('animal-link')) {            // board name: costs a photo hint (free after the game)
+      if (!spendPhotoHint(game, ph.dataset.photo)) return;
+      openPhoto(ph.dataset.photo);
+      render();                                            // update the counter; names stop being links at 0
+    } else {
+      openPhoto(ph.dataset.photo);                         // thumbnails / result photo: always free
+    }
+    return;
+  }
+  if (id === 'photo-modal' || e.target.classList.contains('close')) { closePhoto(); return; }
   if (e.target.classList.contains('diff')) {
     applyDifficulty(e.target.dataset.level);
     syncSettingsInputs();
@@ -363,6 +426,7 @@ document.addEventListener('click', function (e) {
     GRAY_ELIMINATES = $('set-gray').checked;
     GAME_MODE = $('set-mode').value;
     BOARD_MODE = $('set-board').checked;
+    PHOTO_HINTS = Math.max(0, parseInt($('set-hints').value, 10) || 0);
     REVEALED_TRAITS = Math.max(0, parseInt($('set-reveal').value, 10) || 0);
     REVEAL_STRATEGY = $('set-strategy').value;
     syncSettingsInputs();

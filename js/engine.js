@@ -16,6 +16,7 @@ function currentSettings() {
   return {
     mode: GAME_MODE,
     board: BOARD_MODE && GAME_MODE === 'animal',
+    photoHints: PHOTO_HINTS,
     revealCount: REVEALED_TRAITS,
     revealStrategy: REVEAL_STRATEGY,
     revealIds: REVEALED_FILTER_IDS.slice(),
@@ -42,6 +43,7 @@ function createGame(opts) {
     pool: pool,
     target: target,
     history: [],             // guess records (see pool.js)
+    hintsViewed: [],         // animals whose photo the player has looked up as a hint
     remaining: pool.slice(),
     status: 'playing',       // playing | won | lost
     guessCount: 0
@@ -112,4 +114,23 @@ function submitAnimalGuess(game, name) {
   if (correct) game.status = 'won';
   afterGuess(game, record);
   return record;
+}
+
+/* Photo hints: the player may look at the photo of `photoHints` different animals per game.
+   Looking again at an animal already viewed is free. Once the game is over, viewing is unlimited. */
+function photoHintsLeft(game) {
+  return Math.max(0, game.settings.photoHints - game.hintsViewed.length);
+}
+
+/* Should this animal's name be a link right now? Not once the hints are used up. */
+function canViewPhoto(game) {
+  return game.status !== 'playing' || photoHintsLeft(game) > 0;
+}
+
+/* Returns true if the photo may be shown (and records the hint if it costs one). */
+function spendPhotoHint(game, name) {
+  if (game.status !== 'playing' || game.hintsViewed.indexOf(name) >= 0) return true;
+  if (photoHintsLeft(game) <= 0) return false;
+  game.hintsViewed.push(name);
+  return true;
 }

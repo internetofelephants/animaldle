@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Image review</title>
+<style>
+body{font:12px system-ui;margin:8px;background:#f6f4ec}
+#g{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.c{background:#fff;border:1px solid #ccc;padding:3px}
+.c img{width:100%;height:150px;object-fit:contain;display:block;background:#ddd}
+.n{font-weight:bold;margin-top:2px}.l{color:#555;font-size:10px}
+.review .l{color:#b00}.missing{outline:2px solid red}
+</style></head><body><div id="g"></div>
+<script>
+const q=new URLSearchParams(location.search);const from=+q.get('from')||0,to=+q.get('to')||9999;
+fetch('../images/images.json').then(r=>r.json()).then(d=>{ d=d.slice(from,to);
+ g.innerHTML=d.map(r=>`<div class="c ${r.status}"><img src="../${r.localFile||''}" loading="eager"><div class="n">${r.animal}</div><div class="l">${r.status} · ${r.license||r.note||''}<br>${(r.wikiTitle&&r.wikiTitle!==r.animal)?'→ '+r.wikiTitle:''}</div></div>`).join('');
+});
+</script></body></html>

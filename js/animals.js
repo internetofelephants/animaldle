@@ -6,8 +6,9 @@
      locomotion : array; FIRST entry is the primary way of moving
      traits     : array from: wings, horns, tail, shell, stripes, spots, snout, trunk
    Allowed values are listed in filters.js.
+   This is the FULL database. Which animals are actually playable is decided in roster.js.
    ========================================================== */
-var ANIMALS = [
+var ALL_ANIMALS = [
   // ---------- MAMMALS ----------
   { name:"Lion", class:"Mammal", region:"Africa", climate:"Tropical", habitat:"Savanna", size:"Large", diet:"Carnivore", activity:"Crepuscular", social:"Small group", locomotion:["Walks"], covering:"Fur", environment:"Terrestrial", traits:["tail"] },
   { name:"Tiger", class:"Mammal", region:"Asia", climate:"Tropical", habitat:"Forest", size:"Large", diet:"Carnivore", activity:"Crepuscular", social:"Solitary", locomotion:["Walks","Swims"], covering:"Fur", environment:"Terrestrial", traits:["tail","stripes"] },
