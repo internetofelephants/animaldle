@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animaldle</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>ANIMALDLE</h1>
+    <p class="tag">Can you figure out the animal?</p>
+    <div id="difficulty" role="group" aria-label="Difficulty"></div>
+    <p id="difficulty-note"></p>
+    <button id="new-game">New Game</button>
+  </header>
+
+  <section id="result"></section>
+  <section id="guess-panel"></section>
+  <section id="remaining"></section>
+  <section id="history"></section>
+
+  <details id="settings">
+    <summary>Game Settings</summary>
+    <div id="settings-form"></div>
+  </details>
+
+  <section id="debug-root" hidden></section>
+</main>
+
+<!-- Data + logic (no DOM) -->
+<script src="js/config.js"></script>
+<script src="js/animals.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/feedback.js"></script>
+<script src="js/pool.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/sim.js"></script>
+<!-- Interface -->
+<script src="js/debug.js"></script>  <!-- remove this line to drop the debug panel -->
+<script src="js/ui.js"></script>
+</body>
+</html>
