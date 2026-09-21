@@ -59,26 +59,46 @@ function afterGuess(game, record) {
   if (game.status === 'playing' && game.guessCount >= game.settings.maxGuesses) game.status = 'lost';
 }
 
-/* Which characteristics get revealed for one animal guess (kept in FILTERS order). */
-function chooseRevealedFilters(settings) {
-  if (settings.revealStrategy === 'fixed') return FILTERS.filter(function (f) { return settings.revealIds.indexOf(f.id) >= 0; });
-  var n = settings.revealCount;
-  if (!n || n >= FILTERS.length) return FILTERS;
-  var picked = shuffle(FILTERS).slice(0, n);
-  return FILTERS.filter(function (f) { return picked.indexOf(f) >= 0; });
+/* Filter+result combinations (e.g. "trunk|gray") already shown to the player in earlier guesses. */
+function seenHints(game) {
+  var seen = {};
+  game.history.forEach(function (r) {
+    (r.filters || []).forEach(function (f) { seen[f.id + '|' + f.result] = true; });
+  });
+  return seen;
 }
 
-/* Animal-guess mode: guess a whole animal from the pool. The record stores every one of its
-   values with the color it earned vs the target, so pool.js filters on it like any other guess. */
+/* Which characteristics get revealed for one animal guess (kept in FILTERS order).
+   A filter+result combination is never shown twice in a game: entries already seen are dropped,
+   and a filter with nothing new left is skipped (so a guess may reveal fewer than the usual count). */
+function revealForGuess(game, guessed) {
+  var settings = game.settings, seen = seenHints(game);
+  var pool = FILTERS;
+  if (settings.revealStrategy === 'fixed') pool = FILTERS.filter(function (f) { return settings.revealIds.indexOf(f.id) >= 0; });
+  var options = [];
+  pool.forEach(function (def) {
+    var entries = guessedAttributeFeedback(def, guessed, game.target).filter(function (e) { return !seen[def.id + '|' + e.result]; });
+    if (entries.length) options.push({ def: def, entries: entries });
+  });
+  var n = settings.revealStrategy === 'fixed' ? 0 : settings.revealCount;
+  if (n && n < options.length) {
+    var picked = shuffle(options).slice(0, n);
+    options = options.filter(function (o) { return picked.indexOf(o) >= 0; });
+  }
+  return options;
+}
+
+/* Animal-guess mode: guess a whole animal from the pool. The record stores every revealed value with
+   the color it earned vs the target, so pool.js filters on it like any other guess. */
 function guessAnimal(game, name) {
   if (game.status !== 'playing') throw new Error('Game is over');
   var guessed = game.pool.filter(function (a) { return a.name === name; })[0];
   if (!guessed) throw new Error('Not in the current pool');
   if (game.history.some(function (r) { return r.animal === name; })) throw new Error('Already guessed');
   var filters = [];
-  chooseRevealedFilters(game.settings).forEach(function (def) {
-    guessedAttributeFeedback(def, guessed, game.target).forEach(function (e) {
-      filters.push({ id: def.id, label: def.label, value: e.value, result: e.result });
+  revealForGuess(game, guessed).forEach(function (o) {
+    o.entries.forEach(function (e) {
+      filters.push({ id: o.def.id, label: o.def.label, value: e.value, result: e.result });
     });
   });
   var record = { type: 'filters', animal: name, filters: filters };

@@ -36,6 +36,26 @@ function openPhoto(name) {
     '<img src="' + esc(p.file) + '" alt="' + esc(name) + '"><div class="cap"><b>' + esc(name) + '</b><br>' + creditLine(p) + '</div></div>';
   m.hidden = false;
 }
+/* Popup listing every possible value of a filter (opened from any filter title). */
+var FILTER_HELP = {
+  categorical: 'Exact match is green; some values count as "close" (yellow); anything else is gray.',
+  ordered: 'Values run in the order shown. Exact is green, one step away is yellow, further is gray.',
+  multi: 'An animal can have several of these. Any it has is green (for the first-listed one it may be yellow if it only has it secondarily); ones it lacks are gray.',
+  boolean: 'Yes or No. A match is green, otherwise gray.'
+};
+function openFilterInfo(id) {
+  var def = getFilter(id);
+  if (!def) return;
+  var m = $('photo-modal');
+  var opts = def.options.map(function (o, i) { return '<li>' + (def.kind === 'ordered' ? (i + 1) + '. ' : '') + esc(o) + '</li>'; }).join('');
+  m.innerHTML = '<div class="dialog info" role="dialog" aria-label="' + esc(def.label) + '"><button class="close" aria-label="Close">✕</button>' +
+    '<div class="cap"><b>' + esc(def.label) + '</b> <span class="dim">— possible values</span><ul class="opts">' + opts + '</ul>' +
+    '<p class="dim">' + esc(FILTER_HELP[def.kind] || '') + '</p></div></div>';
+  m.hidden = false;
+}
+function filterLink(id, label) {
+  return '<button type="button" class="filter-link" data-filter="' + esc(id) + '" title="See all possible values">' + esc(label) + '</button>';
+}
 function closePhoto() { $('photo-modal').hidden = true; }
 
 var creditsFor = null;   // the game whose credits list is currently rendered
@@ -238,7 +258,7 @@ function renderHistory() {
       html += '<div>Guessed animal: ' + esc(r.name) + ' ' + (r.correct ? '🟩' : '⬜') + '</div>';
     } else {
       r.filters.forEach(function (f) {
-        html += '<div class="' + f.result + '">' + esc(f.label) + ': ' + esc(f.value) + ' ' + RESULT_EMOJI[f.result] + '</div>';
+        html += '<div class="' + f.result + '">' + filterLink(f.id, f.label) + ': ' + esc(f.value) + ' ' + RESULT_EMOJI[f.result] + '</div>';
       });
       html += '<div>' + r.filters.map(function (f) { return RESULT_EMOJI[f.result]; }).join(' ') + '</div>';
     }
@@ -259,7 +279,7 @@ function cluesHTML() {
   guesses.forEach(function (r, gi) {
     var isLatest = gi === guesses.length - 1;
     r.filters.forEach(function (f) {
-      var row = byId[f.id] = byId[f.id] || { label: f.label, seen: {}, items: [], isNew: false };
+      var row = byId[f.id] = byId[f.id] || { id: f.id, label: f.label, seen: {}, items: [], isNew: false };
       if (!row.seen[f.value]) {
         row.seen[f.value] = true;
         row.items.push(f);
@@ -274,7 +294,7 @@ function cluesHTML() {
     if (!row) return;
     var chips = row.items.slice().sort(function (a, b) { return rank[a.result] - rank[b.result]; })
       .map(function (f) { return '<span class="chip ' + f.result + '">' + esc(f.value) + '</span>'; }).join('');
-    html += '<div class="row"><span class="lbl">' + esc(row.label) + '</span>' + chips + (row.isNew ? '<span class="new-tag">NEW</span>' : '') + '</div>';
+    html += '<div class="row"><span class="lbl">' + filterLink(row.id, row.label) + '</span>' + chips + (row.isNew ? '<span class="new-tag">NEW</span>' : '') + '</div>';
   });
   html += '</div><p class="dim">Guessed: ' + guesses.map(function (r) { return esc(r.animal); }).join(', ') + '</p>';
   html += '<details><summary>Per-guess detail</summary>';
@@ -287,10 +307,10 @@ function animalCardHTML(r, i) {
   var html = '<div class="card guesscard"><div class="main"><b>GUESS ' + (i + 1) + ' — ' + esc(r.animal) + '</b>';
   var rows = [], byId = {};
   r.filters.forEach(function (f) {
-    if (!byId[f.id]) { byId[f.id] = { label: f.label, chips: [] }; rows.push(byId[f.id]); }
+    if (!byId[f.id]) { byId[f.id] = { id: f.id, label: f.label, chips: [] }; rows.push(byId[f.id]); }
     byId[f.id].chips.push('<span class="chip ' + f.result + '">' + esc(f.value) + '</span>');
   });
-  rows.forEach(function (row) { html += '<div class="row"><span class="lbl">' + esc(row.label) + '</span>' + row.chips.join('') + '</div>'; });
+  rows.forEach(function (row) { html += '<div class="row"><span class="lbl">' + filterLink(row.id, row.label) + '</span>' + row.chips.join('') + '</div>'; });
   return html + '</div>' + photoImg(r.animal, 'thumb') + '</div>';
 }
 
@@ -380,6 +400,7 @@ document.addEventListener('click', function (e) {
     }
     return;
   }
+  if (e.target.classList.contains('filter-link')) { openFilterInfo(e.target.dataset.filter); return; }
   if (id === 'photo-modal' || e.target.classList.contains('close')) { closePhoto(); return; }
   if (e.target.classList.contains('diff')) {
     applyDifficulty(e.target.dataset.level);
