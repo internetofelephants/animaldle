@@ -49,7 +49,7 @@ var FILTERS = [
     get: function (a) { return a.environment; } },
 
   // Size
-  { id: 'size', label: 'Size', group: 'Size', kind: 'ordered',
+  { id: 'size', label: 'Size', group: 'Size', kind: 'ordered', showExamples: true,
     options: ['Tiny', 'Small', 'Medium', 'Large', 'Huge'],
     get: function (a) { return a.size; } },
 

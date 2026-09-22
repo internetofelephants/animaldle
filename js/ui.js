@@ -43,11 +43,21 @@ var FILTER_HELP = {
   multi: 'An animal can have several of these. Any it has is green (for the first-listed one it may be yellow if it only has it secondarily); ones it lacks are gray.',
   boolean: 'Yes or No. A match is green, otherwise gray.'
 };
+/* A few familiar animals that have this filter value, for the "what does this mean" popup. */
+function examplesFor(def, value) {
+  return ANIMALS.filter(function (a) { return def.get(a) === value; })
+    .sort(function (a, b) { return (a.fame || 2) - (b.fame || 2); })
+    .slice(0, 3).map(function (a) { return a.name; });
+}
 function openFilterInfo(id) {
   var def = getFilter(id);
   if (!def) return;
   var m = $('photo-modal');
-  var opts = def.options.map(function (o, i) { return '<li>' + (def.kind === 'ordered' ? (i + 1) + '. ' : '') + esc(o) + '</li>'; }).join('');
+  var opts = def.options.map(function (o, i) {
+    var ex = def.showExamples ? examplesFor(def, o) : [];
+    return '<li>' + (def.kind === 'ordered' ? (i + 1) + '. ' : '') + '<b>' + esc(o) + '</b>' +
+      (ex.length ? ' <span class="dim">e.g. ' + esc(ex.join(', ')) + '</span>' : '') + '</li>';
+  }).join('');
   m.innerHTML = '<div class="dialog info" role="dialog" aria-label="' + esc(def.label) + '"><button class="close" aria-label="Close">✕</button>' +
     '<div class="cap"><b>' + esc(def.label) + '</b> <span class="dim">— possible values</span><ul class="opts">' + opts + '</ul>' +
     '<p class="dim">' + esc(FILTER_HELP[def.kind] || '') + '</p></div></div>';
