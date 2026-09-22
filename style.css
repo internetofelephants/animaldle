@@ -62,6 +62,9 @@ summary { cursor:pointer; font-weight:bold; }
 .new-tag { margin-left:6px; padding:1px 6px; border-radius:3px; background:#e67e22; color:#fff; font-size:.7rem; font-weight:bold; letter-spacing:.05em; }
 
 #difficulty { display:flex; justify-content:center; flex-wrap:wrap; gap:6px; margin:2px 0 8px; }
+.help-icon { display:flex; align-items:center; justify-content:center; width:26px; height:26px; padding:0; margin:0 auto;
+  border-radius:50%; border:2px solid var(--ink); background:none; color:var(--ink); font-weight:bold; font-size:.95rem; line-height:1; }
+.help-icon:hover { background:var(--ink); color:#fff; }
 #difficulty button { padding:6px 14px; }
 #difficulty button.active { background:var(--ink); color:#fff; border-color:var(--ink); font-weight:bold; }
 #difficulty-note { margin:0 0 8px; font-size:.85rem; color:var(--dim); }

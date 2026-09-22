@@ -64,6 +64,19 @@ function openFilterInfo(id) {
     '<p class="dim">' + esc(FILTER_HELP[def.kind] || '') + '</p></div></div>';
   m.hidden = false;
 }
+function openHowToPlay() {
+  var m = $('photo-modal');
+  m.innerHTML = '<div class="dialog info" role="dialog" aria-label="How to play"><button class="close" aria-label="Close">✕</button>' +
+    '<div class="cap"><b>How to play</b>' +
+    '<p>Your goal is to uncover the animal of the day in 6 or less guesses. Start by picking one animal and revealing some of its defining characteristics.</p>' +
+    '<p>The characteristics that it shares with the animal of the day will be shown in <span class="chip green">green</span>. ' +
+    'Those that it doesn’t share will be shown in <span class="chip gray">grey</span>. ' +
+    'And those that are close or adjacent, will be shown in <span class="chip yellow">yellow</span>.</p>' +
+    '<p>Each round you guess will reveal more characteristics based on the animal you chose. If you are unsure what an animal is or looks like, you can click on the animal to see a picture, but this is only allowed three times across all guessing rounds.</p>' +
+    '<p>Harder levels increase the pool of animals to choose from, reduce the characteristics shared, and include less well known animals in the pool.</p>' +
+    '</div></div>';
+  m.hidden = false;
+}
 function filterLink(id, label) {
   return '<button type="button" class="filter-link" data-filter="' + esc(id) + '" title="See all possible values">' + esc(label) + '</button>';
 }
@@ -108,10 +121,6 @@ function renderDifficulty() {
     return '<button class="diff' + (l.id === DIFFICULTY ? ' active' : '') + '" data-level="' + l.id + '" aria-pressed="' + (l.id === DIFFICULTY) + '">' + esc(l.label) + '</button>';
   }).join('');
   $('difficulty').innerHTML = html;
-  var cur = DIFFICULTY_LEVELS.filter(function (l) { return l.id === DIFFICULTY; })[0];
-  $('difficulty-note').textContent = cur
-    ? cur.animals + ' animals · ' + cur.traits + ' traits revealed per guess'
-    : NUMBER_OF_ANIMALS + ' animals · ' + REVEALED_TRAITS + ' traits revealed per guess (custom settings)';
   syncLogoWidth();
 }
 
@@ -174,13 +183,10 @@ function renderAnimalGuessPanel(panel) {
     var left = photoHintsLeft(game);
     var hintText = left === 0 ? 'No photo hints left' : left + ' photo hint' + (left === 1 ? '' : 's') + ' left';
     panel.innerHTML = '<h2>GUESS #' + (game.guessCount + 1) + ' <span class="dim">of ' + game.settings.maxGuesses + '</span>' +
-      '<span class="hints' + (left === 0 ? ' none' : '') + '" title="Click an animal\'s name to see its photo">📷 ' + hintText + '</span></h2>' +
-      '<p class="dim">Pick an animal on the board below. You\'ll see some of its traits colored against the mystery animal. ' +
-      'Tap an animal\'s name to see its photo — you get ' + game.settings.photoHints + ' photo hints per game.</p>';
+      '<span class="hints' + (left === 0 ? ' none' : '') + '" title="Click an animal\'s name to see its photo">📷 ' + hintText + '</span></h2>';
     return;
   }
   var html = '<h2>GUESS #' + (game.guessCount + 1) + ' <span class="dim">of ' + game.settings.maxGuesses + '</span></h2>' +
-    '<p class="dim">Pick any animal. You\'ll see all its traits colored against the mystery animal.</p>' +
     '<input id="animal-input" list="animal-list" placeholder="Type or pick an animal…" autocomplete="off"> ' +
     '<datalist id="animal-list">' + guessableNames().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('') + '</datalist>' +
     '<button id="submit-animal" class="primary" disabled>SUBMIT GUESS</button>';
@@ -388,6 +394,7 @@ document.addEventListener('click', function (e) {
     return;
   }
   if (e.target.classList.contains('filter-link')) { openFilterInfo(e.target.dataset.filter); return; }
+  if (id === 'how-to-play') { openHowToPlay(); return; }
   if (id === 'photo-modal' || e.target.classList.contains('close')) { closePhoto(); return; }
   if (e.target.classList.contains('diff')) {
     applyDifficulty(e.target.dataset.level);
@@ -419,7 +426,7 @@ document.addEventListener('click', function (e) {
     var rec = submitAnimalGuess(game, name);
     notice = rec.correct ? '' : 'Not quite.';
     render();
-  } else if (id === 'play-again' || id === 'new-game') {
+  } else if (id === 'play-again') {
     newGame();
   } else if (id === 'toggle-possible') {
     showPossible = !showPossible;
