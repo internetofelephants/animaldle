@@ -16,8 +16,8 @@ from openpyxl.utils import get_column_letter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XLSX = os.path.join(ROOT, 'data', 'animals.xlsx')
-TRAITS = ['wings', 'horns', 'tail', 'shell', 'stripes', 'spots', 'snout']
-SINGLE = ['class', 'region', 'climate', 'habitat', 'environment', 'size', 'diet', 'activity', 'social', 'covering']
+TRAITS = ['wings', 'horns', 'tail', 'shell', 'snout']
+SINGLE = ['class', 'region', 'climate', 'habitat', 'environment', 'size', 'diet', 'activity', 'social', 'covering', 'appearance']
 # (header, kind, key)
 COLUMNS = ([('Name', 'name', 'name'), ('Fame (1-3)', 'fame', 'fame')]
            + [(k.capitalize(), 'single', k) for k in SINGLE]

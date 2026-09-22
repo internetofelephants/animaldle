@@ -76,14 +76,19 @@ var FILTERS = [
   { id: 'covering', label: 'Body covering', group: 'Body', kind: 'categorical',
     options: ['Fur', 'Feathers', 'Scales', 'Shell', 'Exoskeleton', 'Smooth skin'],
     get: function (a) { return a.covering; } },
+  { id: 'appearance', label: 'Appearance', group: 'Body', kind: 'categorical',
+    options: ['Plain', 'Striped', 'Spotted', 'Patterned', 'Multi-colored'],
+    related: {
+      Striped: ['Patterned'], Spotted: ['Patterned'], 'Multi-colored': ['Patterned'],
+      Patterned: ['Striped', 'Spotted', 'Multi-colored']
+    },
+    get: function (a) { return a.appearance; } },
 
   // Other traits (yes/no)
   traitFilter('wings', 'Has wings'),
   traitFilter('horns', 'Has horns/antlers'),
   traitFilter('tail', 'Has a tail'),
   traitFilter('shell', 'Has a shell'),
-  traitFilter('stripes', 'Has stripes'),
-  traitFilter('spots', 'Has spots'),
   traitFilter('snout', 'Has a long snout')
 ];
 
