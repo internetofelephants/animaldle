@@ -223,15 +223,15 @@ function renderBoard(box) {
     if (guessed[n]) cls += n === game.target.name ? ' found' : ' guessed';
     else if (notes[n]) cls += ' struck';
     if (game.status !== 'playing' && n === game.target.name) cls += ' found';
-    var buttons = '';
+    var guessBtn = '', outBtn = '';
     if (game.status === 'playing' && !guessed[n]) {
-      buttons = '<span class="btns"><button class="tile-guess" data-name="' + esc(n) + '" title="Guess ' + esc(n) + '" aria-label="Guess ' + esc(n) + '">✓</button>' +
-        '<button class="tile-out" data-name="' + esc(n) + '" title="' + (notes[n] ? 'Bring back' : 'Rule out') + '" aria-label="' + (notes[n] ? 'Bring back ' : 'Rule out ') + esc(n) + '">' + (notes[n] ? '↺' : '✕') + '</button></span>';
+      guessBtn = '<button class="tile-guess" data-name="' + esc(n) + '" title="Guess ' + esc(n) + '" aria-label="Guess ' + esc(n) + '">✓</button>';
+      outBtn = '<button class="tile-out" data-name="' + esc(n) + '" title="' + (notes[n] ? 'Bring back' : 'Rule out') + '" aria-label="' + (notes[n] ? 'Bring back ' : 'Rule out ') + esc(n) + '">' + (notes[n] ? '↺' : '✕') + '</button>';
     }
     var label = (photoFor(n) && canViewPhoto(game))
       ? '<a href="#" class="nm animal-link" data-photo="' + esc(n) + '" title="See a photo of the ' + esc(n) + '">' + esc(n) + '</a>'
       : '<span class="nm">' + esc(n) + '</span>';
-    html += '<li class="' + cls + '">' + label + buttons + '</li>';
+    html += '<li class="' + cls + '">' + guessBtn + label + outBtn + '</li>';
   });
   box.innerHTML = html + '</ul>' + (Object.keys(notes).length ? '<button id="clear-notes">Clear my notes</button>' : '');
 }

@@ -41,10 +41,9 @@ summary { cursor:pointer; font-weight:bold; }
 .names li.pick { cursor:pointer; } .names li.pick:hover { background:#eef5e9; }
 #animal-input { font:inherit; padding:6px 8px; border:1px solid var(--ink); border-radius:4px; width:min(100%, 20em); }
 .names.board { grid-template-columns:repeat(auto-fill, minmax(165px, 1fr)); }
-.tile { display:flex; justify-content:space-between; align-items:center; gap:4px; user-select:none; }
-.tile .nm { flex:1; min-width:0; overflow-wrap:break-word; line-height:1.15; }
-.btns { display:flex; gap:3px; flex:none; }
-.tile-guess, .tile-out { width:28px; height:28px; padding:0; line-height:1; font-size:1rem; font-weight:bold; border-radius:4px; }
+.tile { display:flex; align-items:center; gap:6px; user-select:none; }
+.tile .nm { flex:1; min-width:0; overflow-wrap:break-word; line-height:1.15; text-align:left; }
+.tile-guess, .tile-out { flex:none; width:28px; height:28px; padding:0; line-height:1; font-size:1rem; font-weight:bold; border-radius:4px; }
 .tile-guess { color:#fff; background:var(--green); border-color:var(--green); }
 .tile-out { color:#fff; background:#c0392b; border-color:#c0392b; }
 .tile.struck .tile-out { background:#fff; color:#c0392b; }
