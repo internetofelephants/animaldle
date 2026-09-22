@@ -9,9 +9,10 @@
 <body>
 <main>
   <header>
-    <h1>ANIMALDLE</h1>
-    <p class="tag">Can you figure out the animal?</p>
-    <div id="difficulty" role="group" aria-label="Difficulty"></div>
+    <div class="brand">
+      <img src="images/logo.png" alt="Animaldle — a wildlife deduction game" class="logo">
+      <div id="difficulty" role="group" aria-label="Difficulty"></div>
+    </div>
     <p id="difficulty-note"></p>
     <button id="new-game">New Game</button>
   </header>
@@ -21,17 +22,14 @@
   <section id="remaining"></section>
   <section id="history"></section>
 
-  <details id="settings">
-    <summary>Game Settings</summary>
-    <div id="settings-form"></div>
-  </details>
-
   <details id="credits">
     <summary>Photo credits</summary>
     <div id="credits-list"></div>
   </details>
 
-  <section id="debug-root" hidden></section>
+  <!-- Debug panel disabled for now (was: <script src="js/debug.js"></script> below). To bring it back,
+       uncomment that script tag, this section, and the two DebugPanel lines in js/ui.js. -->
+  <!-- <section id="debug-root" hidden></section> -->
   <div id="photo-modal" hidden></div>
 </main>
 
@@ -47,7 +45,7 @@
 <script src="js/engine.js"></script>
 <script src="js/sim.js"></script>
 <!-- Interface -->
-<script src="js/debug.js"></script>  <!-- remove this line to drop the debug panel -->
+<!-- <script src="js/debug.js"></script> --> <!-- debug panel disabled for now; see note near #debug-root -->
 <script src="js/ui.js"></script>
 </body>
 </html>

@@ -7,6 +7,7 @@ var slots = [];        // [{ id, value }] one per filter slot in the current gue
 var notice = '';       // one-line message (e.g. "Not quite.")
 var revealed = false;
 var notes = {};        // board mode: animal name -> true when the player has struck it out (player-only notes)
+var showPossible = false;   // player opt-in: reveal how many animals are still possible, next to "What you know"
 
 function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -86,6 +87,7 @@ function newGame() {
   notice = '';
   revealed = false;
   notes = {};
+  showPossible = false;
   render();
 }
 
@@ -98,8 +100,7 @@ function render() {
   renderHistory();
   renderDifficulty();
   renderCredits();
-  renderSettings();
-  if (window.DebugPanel && DEBUG_ENABLED) DebugPanel.render(game);
+  // if (window.DebugPanel && DEBUG_ENABLED) DebugPanel.render(game);   // debug panel disabled for now
 }
 
 function renderDifficulty() {
@@ -111,7 +112,23 @@ function renderDifficulty() {
   $('difficulty-note').textContent = cur
     ? cur.animals + ' animals · ' + cur.traits + ' traits revealed per guess'
     : NUMBER_OF_ANIMALS + ' animals · ' + REVEALED_TRAITS + ' traits revealed per guess (custom settings)';
+  syncLogoWidth();
 }
+
+/* Size the logo to span from the left edge of the first difficulty button to the right edge of the
+   last one, so it lines up with the button row instead of a fixed size. */
+function syncLogoWidth() {
+  var logo = document.querySelector('.logo');
+  var box = $('difficulty');
+  var btns = box && box.querySelectorAll('button');
+  if (!logo || !btns || !btns.length) return;
+  var boxWidth = box.getBoundingClientRect().width;
+  var first = btns[0].getBoundingClientRect();
+  var wrapped = [].some.call(btns, function (b) { return Math.abs(b.getBoundingClientRect().top - first.top) > 2; });
+  var w = wrapped ? boxWidth : btns[btns.length - 1].getBoundingClientRect().right - first.left;
+  logo.style.width = Math.max(140, Math.min(w, boxWidth)) + 'px';
+}
+window.addEventListener('resize', function () { requestAnimationFrame(syncLogoWidth); });
 
 function renderGuessPanel() {
   var panel = $('guess-panel');
@@ -282,7 +299,8 @@ function renderHistory() {
    Colors are consistent per value across guesses, so each value appears once. */
 function cluesHTML() {
   var guesses = game.history.filter(function (r) { return r.animal; });
-  var html = '<h2>WHAT YOU KNOW</h2>';
+  var reveal = showPossible ? '<b>' + game.remaining.length + '</b>' : '<button type="button" id="toggle-possible" class="link-btn">Show</button>';
+  var html = '<h2>WHAT YOU KNOW <span class="dim possible-count">Animals still possible: ' + reveal + '</span></h2>';
   if (!guesses.length) return html + '<p class="dim">No clues yet. Make a guess.</p>';
 
   var byId = {};
@@ -324,49 +342,8 @@ function animalCardHTML(r, i) {
   return html + '</div>' + photoImg(r.animal, 'thumb') + '</div>';
 }
 
-function renderSettings() {
-  var el = $('settings-form');
-  if (el.dataset.built) return;
-  el.dataset.built = '1';
-  el.innerHTML =
-    '<p id="settings-lock-note" class="locked-note">Locked for now: pool size and traits revealed are set by the difficulty level. (Set SETTINGS_LOCKED = false in config.js to edit.)</p>' +
-    '<label>Game mode <select id="set-mode"><option value="animal">Guess animals (see all traits)</option><option value="filters">Pick filters</option></select></label>' +
-    '<label>Photo hints per game <input type="number" id="set-hints" min="0" max="20"> <span class="dim">(board mode)</span></label>' +
-    '<label>Traits revealed per guess <input type="number" id="set-reveal" min="0" max="' + FILTERS.length + '"> <span class="dim">(0 = all)</span></label>' +
-    '<label>Reveal strategy <select id="set-strategy"><option value="random">Random subset each guess</option><option value="fixed">Fixed traits (REVEALED_FILTER_IDS)</option></select></label>' +
-    '<label><input type="checkbox" id="set-board"> Notebook board (animal mode: whole pool always shown, you strike animals out yourself)</label>' +
-    '<label>Starting animal pool size <input type="number" id="set-count" min="2" max="' + ANIMALS.length + '"> <span class="dim">(database has ' + ANIMALS.length + ')</span></label>' +
-    '<label>Filters per guess <input type="number" id="set-filters" min="1" max="' + FILTERS.length + '"></label>' +
-    '<label>Maximum guesses <input type="number" id="set-max" min="1" max="99"></label>' +
-    '<label><input type="checkbox" id="set-show"> Show remaining animals</label>' +
-    '<label><input type="checkbox" id="set-early"> Allow early guessing</label>' +
-    '<label><input type="checkbox" id="set-gray"> Gray eliminates animals <span class="dim">(off = gray removes nothing)</span></label>' +
-    '<button id="apply-settings">Apply &amp; start new game</button> <span id="settings-note" class="dim"></span>';
-  syncSettingsInputs();
-  applySettingsLock();
-}
-
-function applySettingsLock() {
-  var el = $('settings-form');
-  el.classList.toggle('locked', SETTINGS_LOCKED);
-  [].forEach.call(el.querySelectorAll('input, select, button'), function (c) { c.disabled = SETTINGS_LOCKED; });
-  var note = $('settings-lock-note');
-  if (note) note.hidden = !SETTINGS_LOCKED;
-}
-
-function syncSettingsInputs() {
-  $('set-mode').value = GAME_MODE;
-  $('set-board').checked = BOARD_MODE;
-  $('set-hints').value = PHOTO_HINTS;
-  $('set-reveal').value = REVEALED_TRAITS;
-  $('set-strategy').value = REVEAL_STRATEGY;
-  $('set-count').value = NUMBER_OF_ANIMALS;
-  $('set-filters').value = FILTERS_PER_GUESS;
-  $('set-max').value = MAX_GUESSES;
-  $('set-show').checked = SHOW_REMAINING_ANIMALS;
-  $('set-early').checked = ALLOW_EARLY_GUESS;
-  $('set-gray').checked = GRAY_ELIMINATES;
-}
+/* Game Settings panel removed from the UI (was locked/inert anyway). The underlying config vars in
+   js/config.js still work — edit them directly, or bring the panel back from git history if needed. */
 
 /* ---------- events ---------- */
 
@@ -414,7 +391,6 @@ document.addEventListener('click', function (e) {
   if (id === 'photo-modal' || e.target.classList.contains('close')) { closePhoto(); return; }
   if (e.target.classList.contains('diff')) {
     applyDifficulty(e.target.dataset.level);
-    syncSettingsInputs();
     newGame();
   } else if (e.target.classList.contains('tile-guess')) {          // board: ✓ guess this animal now
     guessAnimal(game, e.target.dataset.name);
@@ -445,24 +421,9 @@ document.addEventListener('click', function (e) {
     render();
   } else if (id === 'play-again' || id === 'new-game') {
     newGame();
-  } else if (id === 'apply-settings') {
-    if (SETTINGS_LOCKED) return;
-    DIFFICULTY = 'custom';
-    var count = parseInt($('set-count').value, 10) || NUMBER_OF_ANIMALS;
-    NUMBER_OF_ANIMALS = Math.max(2, Math.min(count, ANIMALS.length));
-    FILTERS_PER_GUESS = Math.max(1, Math.min(parseInt($('set-filters').value, 10) || 3, FILTERS.length));
-    MAX_GUESSES = Math.max(1, parseInt($('set-max').value, 10) || 10);
-    SHOW_REMAINING_ANIMALS = $('set-show').checked;
-    ALLOW_EARLY_GUESS = $('set-early').checked;
-    GRAY_ELIMINATES = $('set-gray').checked;
-    GAME_MODE = $('set-mode').value;
-    BOARD_MODE = $('set-board').checked;
-    PHOTO_HINTS = Math.max(0, parseInt($('set-hints').value, 10) || 0);
-    REVEALED_TRAITS = Math.max(0, parseInt($('set-reveal').value, 10) || 0);
-    REVEAL_STRATEGY = $('set-strategy').value;
-    syncSettingsInputs();
-    $('settings-note').textContent = count > ANIMALS.length ? 'Pool capped at database size (' + ANIMALS.length + ').' : '';
-    newGame();
+  } else if (id === 'toggle-possible') {
+    showPossible = !showPossible;
+    renderHistory();
   }
 });
 
@@ -470,7 +431,7 @@ document.addEventListener('click', function (e) {
 function revealAnswer() { revealed = true; render(); }
 
 window.addEventListener('DOMContentLoaded', function () {
-  $('debug-root').hidden = !(DEBUG_ENABLED && window.DebugPanel);
+  // debug panel disabled for now: was `$('debug-root').hidden = !(DEBUG_ENABLED && window.DebugPanel);`
   applyDifficulty(DIFFICULTY);
   newGame();
 });
