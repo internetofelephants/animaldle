@@ -53,5 +53,10 @@ function guessedAttributeFeedback(def, guessed, target) {
   var v = def.get(guessed);
   if (!Array.isArray(v)) v = [v];
   else if (!v.length) v = ['None'];
-  return v.map(function (val) { return { value: val, result: evaluateFilter(def, val, target) }; });
+  return v.map(function (val) {
+    var result = evaluateFilter(def, val, target);
+    // Yes/no traits: never show a gray "No" (a double negative). Say the same thing as a green "Yes".
+    if (def.kind === 'boolean' && val === 'No' && result === RESULT.GRAY) return { value: 'Yes', result: RESULT.GREEN };
+    return { value: val, result: result };
+  });
 }
